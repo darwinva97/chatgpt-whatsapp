@@ -12,7 +12,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const file = join(__dirname, "..", "db.json");
 
 const adapter = new JSONFile<TData>(file);
-const defaultData: TData = { conversations: [] };
+const defaultData: TData = { conversations: [], logs: [] };
 const db = new Low<TData>(adapter, defaultData);
 
 export const getDB = async () => {

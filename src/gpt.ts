@@ -45,7 +45,7 @@ export const getResponse = async (conversation: TConversation) => {
     now.getMinutes() +
     ":" +
     now.getSeconds();
-  let prompt = `(Actualmente es ${date})\n`;
+  let prompt = `(Actualmente es ${date} y estamos en Perú)\n`;
 
   prompt += conversation.messages
     .map((m) => `${m.pushName}:${m.content}`)
