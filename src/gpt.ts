@@ -13,9 +13,11 @@ const openai = new OpenAIApi(configuration);
 
 export const chat = async (messages: proto.IWebMessageInfo[]) => {
   const remoteJid = messages[0].key.remoteJid;
-  const pushName = messages[0].pushName;
+  const pushName = messages[0].pushName || OWN_PUSHNAME;
   const messageTimestamp = messages[0].messageTimestamp;
-  const content = messages[0].message?.conversation;
+  const content =
+    messages[0].message?.conversation ||
+    messages[0].message?.extendedTextMessage?.text;
   const fromMe = messages[0].key.fromMe;
 
   if (!remoteJid || !pushName || !messageTimestamp || !content) return;
@@ -24,11 +26,24 @@ export const chat = async (messages: proto.IWebMessageInfo[]) => {
 
   if (!isPersonalChat) return;
 
-  const conversation = await getConversation({ remoteJid, pushName });
+  let conversation: TConversation | undefined = await getConversation({
+    remoteJid,
+    pushName,
+  });
 
-  await addMessage({ conversation, content, pushName, messageTimestamp });
+  conversation = await addMessage({
+    conversation,
+    content,
+    pushName,
+    messageTimestamp,
+  });
 
-  return !fromMe && (await getResponse(conversation));
+  if (!fromMe && conversation) {
+    const response = await getResponse(conversation);
+    return response;
+  }
+
+  return false;
 };
 
 export const getResponse = async (conversation: TConversation) => {
@@ -45,7 +60,8 @@ export const getResponse = async (conversation: TConversation) => {
     now.getMinutes() +
     ":" +
     now.getSeconds();
-  let prompt = `(Actualmente es ${date} y estamos en Perú)\n`;
+  // let prompt = `(Actualmente es ${date} y estamos en Perú)\n`;
+  let prompt = ``;
 
   prompt += conversation.messages
     .map((m) => `${m.pushName}:${m.content}`)
@@ -64,5 +80,6 @@ export const getResponse = async (conversation: TConversation) => {
     stop: [`${conversation.pushName}:`, `${OWN_PUSHNAME}:`],
   });
 
-  return await response.data;
+  const data = response.data;
+  return { data, prompt }
 };

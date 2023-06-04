@@ -5,7 +5,7 @@ import { Low } from "lowdb";
 import { JSONFile } from "lowdb/node";
 
 import { TConversation, TData } from "./types";
-import { OWN_REMOTEJID } from "./config";
+import { OWN_PUSHNAME, OWN_REMOTEJID } from "./config";
 
 // db.json file path
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -21,7 +21,7 @@ export const getDB = async () => {
 };
 
 export const detectOnlyPersonalChat = (remoteJid: string) => {
-  return remoteJid.includes("s.whatsapp.net") || remoteJid !== OWN_REMOTEJID;
+  return remoteJid.includes("s.whatsapp.net") && remoteJid !== OWN_REMOTEJID;
 };
 
 export const getConversation = async ({
@@ -35,11 +35,16 @@ export const getConversation = async ({
   const existConversation = db.data.conversations.find(
     (c) => c.remoteJid === remoteJid
   );
-  if (existConversation) return existConversation;
+  if (existConversation) {
+    if (existConversation.pushName === OWN_PUSHNAME) {
+      existConversation.pushName = "";
+    }
+    return existConversation;
+  }
 
   const conversation: TConversation = {
     remoteJid,
-    pushName,
+    pushName: pushName === OWN_PUSHNAME ? "" : pushName,
     messages: [],
   };
   db.data.conversations.push(conversation);
@@ -63,4 +68,5 @@ export const addMessage = async ({
   if (!c) return;
   c.messages.push(message);
   await db.write();
+  return c;
 };
