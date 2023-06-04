@@ -40,9 +40,11 @@ async function connectToWhatsApp() {
     const db = await getDB();
     db.data.logs.push(m);
     await db.write();
-    let { data: response, prompt } = await chat(m.messages);
+    const resChat = await chat(m.messages);
 
-    if (!response) return;
+    if (!resChat) return;
+
+    let { data: response, prompt } = resChat;
 
     const text = response.choices[0].text?.trim();
 
